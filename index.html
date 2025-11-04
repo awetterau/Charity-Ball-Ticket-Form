@@ -140,7 +140,7 @@
 
       <div class="buttons">
         <button type="button" class="add-button" onclick="addBuyer()">+ Add Buyer</button>
-        <button type="submit" class="submit-button">Submit</button>
+        <button type="submit" class="submit-button" id="submitButton">Submit</button>
       </div>
     </form>
     <div id="confirmation" class="confirmation"></div>
@@ -169,21 +169,30 @@
     }
 
     const scriptURL = "https://script.google.com/macros/s/AKfycbzn2tG5JOqQJSBiilk37FcNAXJG-IxTSOIO5zhnZ1Y5qGMGffKzp7sPSJcCFazJ80TZ/exec";
+    const form = document.getElementById("ticketForm");
+    const submitButton = document.getElementById("submitButton");
+    let submitting = false;
 
-    document.getElementById("ticketForm").addEventListener("submit", async function (e) {
+    form.addEventListener("submit", async function (e) {
       e.preventDefault();
-      const form = new FormData(this);
+
+      if (submitting) return;
+      submitting = true;
+      submitButton.disabled = true;
+      submitButton.textContent = "Submitting...";
+
+      const formData = new FormData(form);
       const confirmation = document.getElementById("confirmation");
       confirmation.textContent = "";
 
       try {
-        const response = await fetch(scriptURL, { method: "POST", body: form });
+        const response = await fetch(scriptURL, { method: "POST", body: formData });
         const text = await response.text();
 
         if (response.ok && text.includes("Success")) {
           confirmation.style.color = "green";
           confirmation.textContent = "✅ Your submission was received successfully.";
-          this.reset();
+          form.reset();
           document.getElementById("buyers").innerHTML = `
             <div class="buyer-entry">
               <input type="text" name="buyerName[]" placeholder="Buyer Name" required />
@@ -195,6 +204,10 @@
       } catch (error) {
         confirmation.style.color = "red";
         confirmation.textContent = "❌ There was an error submitting the form. Please try again.";
+      } finally {
+        submitting = false;
+        submitButton.disabled = false;
+        submitButton.textContent = "Submit";
       }
     });
   </script>
